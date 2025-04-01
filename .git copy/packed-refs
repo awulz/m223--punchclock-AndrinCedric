@@ -1,0 +1,5 @@
+# pack-refs with: peeled fully-peeled sorted 
+f602165bb14787ca7adda23e086f6f222d24961e refs/remotes/origin/block2/2-1-schnittstelle-erweitern
+2c8e3be12bc96984abc9f5206617139410a686d2 refs/remotes/origin/block2/2-2-dto
+71867b4812f9251c0eef47faa6509ebfb3e49f2d refs/remotes/origin/block3/3-1-datenmodellerweiterung-ohne-dto
+2e14cfb11d7469bc6717e954266bd44c04a9f12f refs/remotes/origin/main
