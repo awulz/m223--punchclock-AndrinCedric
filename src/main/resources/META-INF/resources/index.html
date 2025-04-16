@@ -1,37 +1,213 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport"
               content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>Punchclock Client</title>
-        <link rel="stylesheet" type="text/css" href="style.css" />
+        <title>Zeiterfassung</title>
+        <link rel="stylesheet" href="style.css">
         <script src="script.js" type="application/javascript"></script>
     </head>
     <body>
-        <form id="createEntryForm">
-            <label for="checkIn">Check in</label>
-            <input type="date" name="checkInDate" id="checkIn" required>
-            <input type="time" name="checkInTime" required>
-            <label for="checkOut">Check out</label>
-            <input type="date" name="checkOutDate" id="checkOut" required>
-            <input type="time" name="checkOutTime" required>
-            <input type="submit" value="Save" />
-        </form>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Check in</th>
-                    <th>Check out</th>
-                </tr>
-            </thead>
-            <tbody id="entryDisplay">
-                <tr>
-                    <td colspan="3">Loading...</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="container">
+            <h1>Zeiterfassung</h1>
+            
+            <div class="form-group">
+                <h2>Neue Zeiterfassung</h2>
+                <form id="entryForm">
+                    <div class="form-group">
+                        <label for="checkIn">Arbeitsbeginn</label>
+                        <div class="input-help">Wann haben Sie mit der Arbeit begonnen?</div>
+                        <input type="datetime-local" id="checkIn" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="checkOut">Arbeitsende</label>
+                        <div class="input-help">Wann haben Sie die Arbeit beendet?</div>
+                        <input type="datetime-local" id="checkOut" required>
+                    </div>
+                    
+                    <button type="submit" class="save-button">Speichern</button>
+                </form>
+            </div>
+
+            <div class="entries-list">
+                <h2>Erfasste Zeiten</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Arbeitsbeginn</th>
+                            <th>Arbeitsende</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="entriesTableBody">
+                        <!-- Einträge werden hier dynamisch eingefügt -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('entryForm');
+                const entriesTableBody = document.getElementById('entriesTableBody');
+                let editingId = null;
+
+                // Lade Einträge beim Seitenstart
+                loadEntries();
+
+                // Formular absenden
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const checkIn = document.getElementById('checkIn').value;
+                    const checkOut = document.getElementById('checkOut').value;
+
+                    // Validiere Datum
+                    const checkInDate = new Date(checkIn);
+                    const checkOutDate = new Date(checkOut);
+
+                    if (checkOutDate <= checkInDate) {
+                        alert('Das Arbeitsende muss nach dem Arbeitsbeginn liegen!');
+                        return;
+                    }
+
+                    const entry = {
+                        checkIn: checkInDate.toISOString(),
+                        checkOut: checkOutDate.toISOString()
+                    };
+
+                    if (editingId) {
+                        updateEntry(editingId, entry);
+                    } else {
+                        createEntry(entry);
+                    }
+                });
+
+                // Einträge laden
+                async function loadEntries() {
+                    try {
+                        const response = await fetch('/entries');
+                        if (!response.ok) {
+                            throw new Error('Netzwerkfehler beim Laden der Einträge');
+                        }
+                        const entries = await response.json();
+                        displayEntries(entries);
+                    } catch (error) {
+                        alert('Fehler beim Laden der Einträge: ' + error.message);
+                    }
+                }
+
+                // Neuen Eintrag erstellen
+                async function createEntry(entry) {
+                    try {
+                        const response = await fetch('/entries', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(entry)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Fehler beim Speichern');
+                        }
+
+                        form.reset();
+                        loadEntries();
+                    } catch (error) {
+                        alert('Fehler beim Erstellen des Eintrags: ' + error.message);
+                    }
+                }
+
+                // Eintrag aktualisieren
+                async function updateEntry(id, entry) {
+                    try {
+                        const response = await fetch(`/entries/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(entry)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Fehler beim Aktualisieren');
+                        }
+
+                        editingId = null;
+                        form.reset();
+                        document.querySelector('.save-button').textContent = 'Speichern';
+                        loadEntries();
+                    } catch (error) {
+                        alert('Fehler beim Aktualisieren des Eintrags: ' + error.message);
+                    }
+                }
+
+                // Eintrag löschen
+                window.deleteEntry = async function(id) {
+                    if (!confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/entries/${id}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Fehler beim Löschen');
+                        }
+
+                        loadEntries();
+                    } catch (error) {
+                        alert('Fehler beim Löschen des Eintrags: ' + error.message);
+                    }
+                }
+
+                // Eintrag bearbeiten
+                window.editEntry = function(id, checkIn, checkOut) {
+                    editingId = id;
+                    document.getElementById('checkIn').value = checkIn.slice(0, 16); // Format für datetime-local
+                    document.getElementById('checkOut').value = checkOut.slice(0, 16);
+                    document.querySelector('.save-button').textContent = 'Aktualisieren';
+                    document.getElementById('checkIn').focus();
+                }
+
+                // Einträge anzeigen
+                function displayEntries(entries) {
+                    entriesTableBody.innerHTML = '';
+                    entries.forEach(entry => {
+                        const row = document.createElement('tr');
+                        const checkIn = new Date(entry.checkIn);
+                        const checkOut = new Date(entry.checkOut);
+                        
+                        row.innerHTML = `
+                            <td>${entry.id}</td>
+                            <td>${formatDate(checkIn)}</td>
+                            <td>${formatDate(checkOut)}</td>
+                            <td class="actions">
+                                <button class="edit-button" onclick="editEntry(${entry.id}, '${entry.checkIn}', '${entry.checkOut}')">Bearbeiten</button>
+                                <button class="delete-button" onclick="deleteEntry(${entry.id})">Löschen</button>
+                            </td>
+                        `;
+                        entriesTableBody.appendChild(row);
+                    });
+                }
+
+                // Datum formatieren
+                function formatDate(date) {
+                    return date.toLocaleString('de-DE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            });
+        </script>
     </body>
 </html>
