@@ -1,6 +1,6 @@
 package ch.zli.m223.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 

@@ -3,9 +3,11 @@ package ch.zli.m223.service;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.jwt.Claims;
+
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response;
 
 import io.smallrye.jwt.build.Jwt;
 

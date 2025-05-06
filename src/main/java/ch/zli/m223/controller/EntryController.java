@@ -2,13 +2,16 @@ package ch.zli.m223.controller;
 
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -36,6 +39,22 @@ public class EntryController {
     @Operation(summary = "Creates a new entry.", description = "Creates a new entry and returns the newly added entry.")
     public Entry create(Entry entry) {
        return entryService.createEntry(entry);
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Updates an existing entry.", description = "Updates an existing entry and returns the updated entry.")
+    public Entry update(@PathParam("id") Long id, Entry entry) {
+        return entryService.updateEntry(id, entry);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Operation(summary = "Deletes an entry.", description = "Deletes an entry by its ID.")
+    public void delete(@PathParam("id") Long id) {
+        entryService.deleteEntry(id);
     }
 
 }
