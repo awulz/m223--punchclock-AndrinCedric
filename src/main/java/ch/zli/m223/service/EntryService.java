@@ -8,6 +8,11 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 import ch.zli.m223.model.Entry;
+import ch.zli.m223.dto.EntryDto;
+import ch.zli.m223.model.Category;
+import ch.zli.m223.model.Tag;
+import ch.zli.m223.model.ApplicationUser;
+import jakarta.persistence.PersistenceContext;
 
 @ApplicationScoped
 public class EntryService {
@@ -44,5 +49,36 @@ public class EntryService {
         if (entry != null) {
             entityManager.remove(entry);
         }
+    }
+
+    public EntryDto toDto(Entry entry) {
+        EntryDto dto = new EntryDto();
+        dto.id = entry.getId();
+        dto.checkIn = entry.getCheckIn();
+        dto.checkOut = entry.getCheckOut();
+        dto.categoryId = entry.getCategory() != null ? entry.getCategory().getId() : null;
+        dto.userId = entry.getUser() != null ? entry.getUser().getId() : null;
+        if(entry.getTags() != null) {
+            dto.tagIds = entry.getTags().stream().map(Tag::getId).toList();
+        }
+        return dto;
+    }
+
+    public Entry fromDto(EntryDto dto) {
+        Entry entry = new Entry();
+        entry.setId(dto.id);
+        entry.setCheckIn(dto.checkIn);
+        entry.setCheckOut(dto.checkOut);
+        if(dto.categoryId != null) {
+            entry.setCategory(entityManager.find(Category.class, dto.categoryId));
+        }
+        if(dto.userId != null) {
+            entry.setUser(entityManager.find(ApplicationUser.class, dto.userId));
+        }
+        if(dto.tagIds != null) {
+            List<Tag> tags = dto.tagIds.stream().map(id -> entityManager.find(Tag.class, id)).toList();
+            entry.setTags(tags);
+        }
+        return entry;
     }
 }
