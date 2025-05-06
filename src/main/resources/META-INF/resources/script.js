@@ -112,6 +112,39 @@ const deleteEntry = (id) => {
     }
 };
 
+// Kategorien und Tags laden für die Auswahlfelder
+async function loadCategories() {
+    const res = await fetch('/categories');
+    const categories = await res.json();
+    const categorySelect = document.getElementById('categorySelect');
+    categorySelect.innerHTML = '';
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.title;
+        categorySelect.appendChild(opt);
+    });
+}
+async function loadTags() {
+    const res = await fetch('/tags');
+    const tags = await res.json();
+    const tagSelect = document.getElementById('tagSelect');
+    tagSelect.innerHTML = '';
+    tags.forEach(tag => {
+        const opt = document.createElement('option');
+        opt.value = tag.id;
+        opt.textContent = tag.title;
+        tagSelect.appendChild(opt);
+    });
+}
+// Beim Laden der Seite Auswahlfelder initialisieren
+window.addEventListener('DOMContentLoaded', () => {
+    loadCategories();
+    loadTags();
+});
+// Beim Erstellen/Bearbeiten von Einträgen Kategorie und Tags mitgeben
+// Passe createEntry und updateEntry entsprechend an
+
 document.addEventListener('DOMContentLoaded', function(){
     const createEntryForm = document.querySelector('#createEntryForm');
     createEntryForm.addEventListener('submit', createEntry);

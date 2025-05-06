@@ -157,24 +157,159 @@ label {
 
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
+        padding: 10px;
     }
-    
-    table {
+    table, thead, tbody, th, td, tr {
         display: block;
-        overflow-x: auto;
     }
+    thead tr {
+        display: none;
+    }
+    tr {
+        margin-bottom: 15px;
+    }
+    td {
+        padding: 10px;
+        border-bottom: 1px solid #e0e0e0;
+        position: relative;
+    }
+    td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: var(--secondary-color);
+    }
+}
 
-    h1 {
-        font-size: 2em;
-    }
-
-    .actions {
-        flex-direction: column;
-        gap: 5px;
-    }
-
-    .edit-button, .delete-button {
-        width: 100%;
-    }
+.admin-section {
+    margin-top: 40px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+.admin-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+.admin-section form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.admin-section input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--border-radius);
+    border: 1px solid #e0e0e0;
+    font-size: 15px;
+}
+.admin-section button {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 10px 18px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.admin-section button:hover {
+    background: var(--secondary-color);
+}
+.admin-section ul {
+    list-style: none;
+    padding: 0;
+}
+.admin-section li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+.admin-section li:last-child {
+    border-bottom: none;
+}
+.admin-section .edit-btn, .admin-section .delete-btn {
+    margin-left: 8px;
+    padding: 4px 10px;
+    font-size: 13px;
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+}
+.admin-section .edit-btn {
+    background: #FFA000;
+    color: white;
+}
+.admin-section .edit-btn:hover {
+    background: #FF8F00;
+}
+.admin-section .delete-btn {
+    background: #F44336;
+    color: white;
+}
+.admin-section .delete-btn:hover {
+    background: #D32F2F;
+}
+select, select[multiple], #categorySelect, #tagSelect {
+    width: 100%;
+    min-height: 40px;
+    border-radius: var(--border-radius);
+    border: 1.5px solid #e0e0e0;
+    padding: 8px;
+    font-size: 15px;
+    background: #fff;
+    margin-bottom: 20px;
+}
+select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+table tr:nth-child(even) {
+    background-color: #f2f6fa;
+}
+.save-button {
+    background-color: var(--primary-color);
+    color: white;
+    width: 100%;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 12px 24px;
+    font-size: 16px;
+    margin-top: 10px;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.save-button:hover {
+    background-color: var(--secondary-color);
+}
+.edit-button {
+    background-color: #FFA000;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 8px 16px;
+    font-size: 14px;
+    margin-right: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.edit-button:hover {
+    background-color: #FF8F00;
+}
+.delete-button {
+    background-color: #F44336;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.delete-button:hover {
+    background-color: #D32F2F;
 }
