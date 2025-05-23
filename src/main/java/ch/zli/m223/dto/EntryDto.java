@@ -8,6 +8,6 @@ public class EntryDto {
     public LocalDateTime checkIn;
     public LocalDateTime checkOut;
     public Long categoryId;
-    public List<Long> tagIds;
+    public List<String> tags;
     public Long userId;
 } 

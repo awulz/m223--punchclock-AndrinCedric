@@ -313,3 +313,36 @@ table tr:nth-child(even) {
 .delete-button:hover {
     background-color: #D32F2F;
 }
+.tag-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.tag-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #f2f6fa;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 15px;
+    cursor: pointer;
+}
+.tag-checkboxes input[type="checkbox"] {
+    accent-color: var(--primary-color);
+}
+#tagsInput {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+#tagsInput:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}

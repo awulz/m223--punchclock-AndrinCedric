@@ -59,11 +59,12 @@ public class EntryService {
         dto.categoryId = entry.getCategory() != null ? entry.getCategory().getId() : null;
         dto.userId = entry.getUser() != null ? entry.getUser().getId() : null;
         if(entry.getTags() != null) {
-            dto.tagIds = entry.getTags().stream().map(Tag::getId).toList();
+            dto.tags = entry.getTags().stream().map(Tag::getTitle).toList();
         }
         return dto;
     }
 
+    @Transactional
     public Entry fromDto(EntryDto dto) {
         Entry entry = new Entry();
         entry.setId(dto.id);
@@ -75,8 +76,21 @@ public class EntryService {
         if(dto.userId != null) {
             entry.setUser(entityManager.find(ApplicationUser.class, dto.userId));
         }
-        if(dto.tagIds != null) {
-            List<Tag> tags = dto.tagIds.stream().map(id -> entityManager.find(Tag.class, id)).toList();
+        if(dto.tags != null) {
+            List<Tag> tags = dto.tags.stream().map(title -> {
+                // Versuche Tag zu finden, sonst neu anlegen
+                List<Tag> found = entityManager.createQuery("FROM Tag WHERE title = :title", Tag.class)
+                    .setParameter("title", title)
+                    .getResultList();
+                if (!found.isEmpty()) {
+                    return found.get(0);
+                } else {
+                    Tag newTag = new Tag();
+                    newTag.setTitle(title);
+                    entityManager.persist(newTag);
+                    return newTag;
+                }
+            }).toList();
             entry.setTags(tags);
         }
         return entry;

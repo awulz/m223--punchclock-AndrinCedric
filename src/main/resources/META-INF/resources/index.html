@@ -28,6 +28,12 @@
                         <input type="datetime-local" id="checkOut" required>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="tagsInput">Tags (durch Komma getrennt)</label>
+                        <div class="input-help">z.B. Homeoffice, Projekt XY</div>
+                        <input type="text" id="tagsInput" placeholder="z.B. Homeoffice, Projekt XY">
+                    </div>
+                    
                     <div id="errorMessage" class="error-message" style="display:none;"></div>
                     
                     <button type="submit" class="save-button">Speichern</button>
@@ -42,6 +48,7 @@
                             <th>Nr.</th>
                             <th>Arbeitsbeginn</th>
                             <th>Arbeitsende</th>
+                            <th>Tags</th>
                             <th>Aktionen</th>
                         </tr>
                     </thead>
@@ -83,15 +90,21 @@
                 hideError();
                 const checkIn = document.getElementById('checkIn').value;
                 const checkOut = document.getElementById('checkOut').value;
-                const checkInDate = new Date(checkIn);
-                const checkOutDate = new Date(checkOut);
-                if (checkOutDate <= checkInDate) {
+                const tagsInput = document.getElementById('tagsInput').value;
+                if (!checkIn || !checkOut) {
+                    showError('Bitte Start- und Endzeit eingeben!');
+                    return;
+                }
+                if (checkOut <= checkIn) {
                     showError('Das Arbeitsende muss nach dem Arbeitsbeginn liegen!');
                     return;
                 }
+                // Tags als Array splitten und trimmen
+                const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
                 const entry = {
-                    checkIn: checkInDate.toISOString(),
-                    checkOut: checkOutDate.toISOString()
+                    checkIn: checkIn + ':00',
+                    checkOut: checkOut + ':00',
+                    tags: tags
                 };
                 try {
                     if (editingId) {
@@ -122,12 +135,17 @@
                 entriesTableBody.innerHTML = '';
                 entries.forEach((entry, idx) => {
                     const row = document.createElement('tr');
-                    const checkIn = new Date(entry.checkIn);
-                    const checkOut = new Date(entry.checkOut);
+                    const checkIn = entry.checkIn ? new Date(entry.checkIn) : null;
+                    const checkOut = entry.checkOut ? new Date(entry.checkOut) : null;
+                    let tagText = '';
+                    if (entry.tags && entry.tags.length > 0) {
+                        tagText = Array.isArray(entry.tags) ? entry.tags.join(', ') : entry.tags;
+                    }
                     row.innerHTML = `
                         <td>${idx + 1}</td>
-                        <td>${formatDate(checkIn)}</td>
-                        <td>${formatDate(checkOut)}</td>
+                        <td>${checkIn ? formatDate(checkIn) : ''}</td>
+                        <td>${checkOut ? formatDate(checkOut) : ''}</td>
+                        <td>${tagText}</td>
                         <td class="actions"></td>
                     `;
                     // Bearbeiten-Button
@@ -136,8 +154,9 @@
                     editBtn.textContent = 'Bearbeiten';
                     editBtn.onclick = () => {
                         editingId = entry.id;
-                        document.getElementById('checkIn').value = entry.checkIn.slice(0, 16);
-                        document.getElementById('checkOut').value = entry.checkOut.slice(0, 16);
+                        document.getElementById('checkIn').value = entry.checkIn ? entry.checkIn.slice(0, 16) : '';
+                        document.getElementById('checkOut').value = entry.checkOut ? entry.checkOut.slice(0, 16) : '';
+                        document.getElementById('tagsInput').value = Array.isArray(entry.tags) ? entry.tags.join(', ') : (entry.tags || '');
                         form.querySelector('.save-button').textContent = 'Aktualisieren';
                         hideError();
                     };
