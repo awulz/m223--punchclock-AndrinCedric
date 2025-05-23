@@ -7,7 +7,7 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>Zeiterfassung</title>
         <link rel="stylesheet" href="style.css">
-        <script src="script.js" type="application/javascript"></script>
+        <script src="script.js" defer></script>
     </head>
     <body>
         <div class="container">
@@ -28,6 +28,14 @@
                         <input type="datetime-local" id="checkOut" required>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="tagsInput">Tags (durch Komma getrennt)</label>
+                        <div class="input-help">z.B. Homeoffice, Projekt XY</div>
+                        <input type="text" id="tagsInput" placeholder="z.B. Homeoffice, Projekt XY">
+                    </div>
+                    
+                    <div id="errorMessage" class="error-message" style="display:none;"></div>
+                    
                     <button type="submit" class="save-button">Speichern</button>
                 </form>
             </div>
@@ -40,6 +48,7 @@
                             <th>Nr.</th>
                             <th>Arbeitsbeginn</th>
                             <th>Arbeitsende</th>
+                            <th>Tags</th>
                             <th>Aktionen</th>
                         </tr>
                     </thead>
@@ -51,163 +60,137 @@
         </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const form = document.getElementById('entryForm');
-                const entriesTableBody = document.getElementById('entriesTableBody');
-                let editingId = null;
+            let editingId = null;
+            const form = document.getElementById('entryForm');
+            const entriesTableBody = document.getElementById('entriesTableBody');
+            const errorMessage = document.getElementById('errorMessage');
 
-                // Lade Einträge beim Seitenstart
-                loadEntries();
+            function showError(msg) {
+                errorMessage.textContent = msg;
+                errorMessage.style.display = 'block';
+            }
+            function hideError() {
+                errorMessage.textContent = '';
+                errorMessage.style.display = 'none';
+            }
 
-                // Formular absenden
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const checkIn = document.getElementById('checkIn').value;
-                    const checkOut = document.getElementById('checkOut').value;
-
-                    // Validiere Datum
-                    const checkInDate = new Date(checkIn);
-                    const checkOutDate = new Date(checkOut);
-
-                    if (checkOutDate <= checkInDate) {
-                        alert('Das Arbeitsende muss nach dem Arbeitsbeginn liegen!');
-                        return;
-                    }
-
-                    const entry = {
-                        checkIn: checkInDate.toISOString(),
-                        checkOut: checkOutDate.toISOString()
-                    };
-
-                    if (editingId) {
-                        updateEntry(editingId, entry);
-                    } else {
-                        createEntry(entry);
-                    }
-                });
-
-                // Einträge laden
-                async function loadEntries() {
-                    try {
-                        const response = await fetch('/entries');
-                        if (!response.ok) {
-                            throw new Error('Netzwerkfehler beim Laden der Einträge');
-                        }
-                        const entries = await response.json();
-                        displayEntries(entries);
-                    } catch (error) {
-                        alert('Fehler beim Laden der Einträge: ' + error.message);
-                    }
+            async function loadEntries() {
+                try {
+                    const response = await fetch('/entries');
+                    if (!response.ok) throw new Error('Fehler beim Laden der Einträge');
+                    const entries = await response.json();
+                    displayEntries(entries);
+                } catch (error) {
+                    showError(error.message);
                 }
+            }
 
-                // Neuen Eintrag erstellen
-                async function createEntry(entry) {
-                    try {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                hideError();
+                const checkIn = document.getElementById('checkIn').value;
+                const checkOut = document.getElementById('checkOut').value;
+                const tagsInput = document.getElementById('tagsInput').value;
+                if (!checkIn || !checkOut) {
+                    showError('Bitte Start- und Endzeit eingeben!');
+                    return;
+                }
+                if (checkOut <= checkIn) {
+                    showError('Das Arbeitsende muss nach dem Arbeitsbeginn liegen!');
+                    return;
+                }
+                // Tags als Array splitten und trimmen
+                const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                const entry = {
+                    checkIn: checkIn + ':00',
+                    checkOut: checkOut + ':00',
+                    tags: tags
+                };
+                try {
+                    if (editingId) {
+                        const response = await fetch(`/entries/${editingId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(entry)
+                        });
+                        if (!response.ok) throw new Error('Fehler beim Aktualisieren');
+                        editingId = null;
+                        form.querySelector('.save-button').textContent = 'Speichern';
+                    } else {
                         const response = await fetch('/entries', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(entry)
                         });
-
-                        if (!response.ok) {
-                            throw new Error('Fehler beim Speichern');
-                        }
-
-                        form.reset();
-                        loadEntries();
-                    } catch (error) {
-                        alert('Fehler beim Erstellen des Eintrags: ' + error.message);
+                        if (!response.ok) throw new Error('Fehler beim Speichern');
                     }
-                }
-
-                // Eintrag aktualisieren
-                async function updateEntry(id, entry) {
-                    try {
-                        const response = await fetch(`/entries/${id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(entry)
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('Fehler beim Aktualisieren');
-                        }
-
-                        editingId = null;
-                        form.reset();
-                        document.querySelector('.save-button').textContent = 'Speichern';
-                        loadEntries();
-                    } catch (error) {
-                        alert('Fehler beim Aktualisieren des Eintrags: ' + error.message);
-                    }
-                }
-
-                // Eintrag löschen
-                window.deleteEntry = async function(id) {
-                    if (!confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch(`/entries/${id}`, {
-                            method: 'DELETE'
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('Fehler beim Löschen');
-                        }
-
-                        loadEntries();
-                    } catch (error) {
-                        alert('Fehler beim Löschen des Eintrags: ' + error.message);
-                    }
-                }
-
-                // Eintrag bearbeiten
-                window.editEntry = function(id, checkIn, checkOut) {
-                    editingId = id;
-                    document.getElementById('checkIn').value = checkIn.slice(0, 16); // Format für datetime-local
-                    document.getElementById('checkOut').value = checkOut.slice(0, 16);
-                    document.querySelector('.save-button').textContent = 'Aktualisieren';
-                    document.getElementById('checkIn').focus();
-                }
-
-                // Einträge anzeigen
-                function displayEntries(entries) {
-                    entriesTableBody.innerHTML = '';
-                    entries.forEach(entry => {
-                        const row = document.createElement('tr');
-                        const checkIn = new Date(entry.checkIn);
-                        const checkOut = new Date(entry.checkOut);
-                        
-                        row.innerHTML = `
-                            <td>${entry.id}</td>
-                            <td>${formatDate(checkIn)}</td>
-                            <td>${formatDate(checkOut)}</td>
-                            <td class="actions">
-                                <button class="edit-button" onclick="editEntry(${entry.id}, '${entry.checkIn}', '${entry.checkOut}')">Bearbeiten</button>
-                                <button class="delete-button" onclick="deleteEntry(${entry.id})">Löschen</button>
-                            </td>
-                        `;
-                        entriesTableBody.appendChild(row);
-                    });
-                }
-
-                // Datum formatieren
-                function formatDate(date) {
-                    return date.toLocaleString('de-DE', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
+                    form.reset();
+                    loadEntries();
+                } catch (error) {
+                    showError(error.message);
                 }
             });
+
+            function displayEntries(entries) {
+                entriesTableBody.innerHTML = '';
+                entries.forEach((entry, idx) => {
+                    const row = document.createElement('tr');
+                    const checkIn = entry.checkIn ? new Date(entry.checkIn) : null;
+                    const checkOut = entry.checkOut ? new Date(entry.checkOut) : null;
+                    let tagText = '';
+                    if (entry.tags && entry.tags.length > 0) {
+                        tagText = Array.isArray(entry.tags) ? entry.tags.join(', ') : entry.tags;
+                    }
+                    row.innerHTML = `
+                        <td>${idx + 1}</td>
+                        <td>${checkIn ? formatDate(checkIn) : ''}</td>
+                        <td>${checkOut ? formatDate(checkOut) : ''}</td>
+                        <td>${tagText}</td>
+                        <td class="actions"></td>
+                    `;
+                    // Bearbeiten-Button
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'edit-button';
+                    editBtn.textContent = 'Bearbeiten';
+                    editBtn.onclick = () => {
+                        editingId = entry.id;
+                        document.getElementById('checkIn').value = entry.checkIn ? entry.checkIn.slice(0, 16) : '';
+                        document.getElementById('checkOut').value = entry.checkOut ? entry.checkOut.slice(0, 16) : '';
+                        document.getElementById('tagsInput').value = Array.isArray(entry.tags) ? entry.tags.join(', ') : (entry.tags || '');
+                        form.querySelector('.save-button').textContent = 'Aktualisieren';
+                        hideError();
+                    };
+                    // Löschen-Button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-button';
+                    deleteBtn.textContent = 'Löschen';
+                    deleteBtn.onclick = async () => {
+                        if (!confirm('Möchten Sie diesen Eintrag wirklich löschen?')) return;
+                        try {
+                            const response = await fetch(`/entries/${entry.id}`, { method: 'DELETE' });
+                            if (!response.ok) throw new Error('Fehler beim Löschen');
+                            loadEntries();
+                        } catch (error) {
+                            showError(error.message);
+                        }
+                    };
+                    row.querySelector('.actions').appendChild(editBtn);
+                    row.querySelector('.actions').appendChild(deleteBtn);
+                    entriesTableBody.appendChild(row);
+                });
+            }
+
+            function formatDate(date) {
+                return date.toLocaleString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            window.addEventListener('DOMContentLoaded', loadEntries);
         </script>
     </body>
 </html>
